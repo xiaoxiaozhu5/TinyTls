@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright © 2018-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
+* Copyright ?2018-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
 *
 * This file is a part of the software package TinyTls, originally known as TinySsl.
 * This software is written by Anthony Mai and is provided under the terms and
@@ -69,10 +69,13 @@
 ******************************************************************************/
 
 #include <winsock2.h>
+#include <ws2tcpip.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+
 #include "TcpSockWin32.h"
 
 int TcpSockWin32::m_LastError = 0;
@@ -119,7 +122,6 @@ TcpSockWin32::TcpSockWin32()
 {
 }
 
-#include "ws2tcpip.h"
 
 TcpSockWin32::TcpSockWin32(uint32_t ip, uint32_t port)
 {
@@ -162,6 +164,11 @@ TcpSockWin32::TcpSockWin32(uint32_t ip, uint32_t port)
 }
 
 TcpSockWin32::TcpSockWin32(void* sock, sockaddr& addr, int addrLen)
+{
+    m_hSock = sock;
+}
+
+TcpSockWin32::TcpSockWin32(void* sock)
 {
     m_hSock = sock;
 }

@@ -79,7 +79,6 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <errno.h>
-#endif //__linux__
 
 #include "TcpSockLinux.h"
 
@@ -339,3 +338,4 @@ int TcpSockLinux::Recv(uint8_t* pData, size_t cbSize)
     return SOCKET_ERROR;
 }
 
+#endif //__linux__

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright © 2018-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
+* Copyright ?2018-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
 *
 * This software is written by Anthony Mai who retains full copyright of this
 * work. As such any Copyright Notices contained in this code. are NOT to be
@@ -66,6 +66,10 @@
 #include <stdint.h>
 #include <memory.h>
 #include <new>
+
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 #include "ecc_p256.h"
 
@@ -190,6 +194,12 @@ int tryTest()
 
 
 #ifdef WIN32
+#ifdef _WIN64
+uint64_t time_tick()
+{
+    return GetTickCount64();
+}
+#else
 __declspec( naked ) uint64_t time_tick()
 {
     _asm {
@@ -197,6 +207,7 @@ __declspec( naked ) uint64_t time_tick()
         ret
     }
 }
+#endif
 #else //WIN32
 //Depend on the platform. Please implement a timer function
 extern "C" {

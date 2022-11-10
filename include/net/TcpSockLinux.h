@@ -2,6 +2,8 @@
 
 #include "TcpSock.h"
 
+#ifdef __linux__
+
 struct sockaddr;
 
 typedef int SOCKET;
@@ -34,3 +36,4 @@ private:
     static int m_LastError;
 };
 
+#endif //__linux__

@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright © 2018-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
+* Copyright ?2018-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
 *
 * This file is a part of the software package TinyTls, originally known as TinySsl.
 * This software is written by Anthony Mai and is provided under the terms and
@@ -343,6 +343,25 @@ AesCtx::AesCtx(const AesKey& key) :
 
 #else //WIN32
 
+#ifdef _WIN64
+
+AesCtx::AesCtx(const AesKey& key) :
+    r0(key),
+    r1(r0),
+    r2(r1(1)),
+    r3(r2(2)),
+    r4(r3(3)),
+    r5(r4(4)),
+    r6(r5(5)),
+    r7(r6(6)),
+    r8(r7(7)),
+    r9(r8(8)),
+    rf(r9(9))
+{
+    rf(10);
+}
+
+#else
 AesCtx::AesCtx(const AesKey& key) :
     r0(key)
 {
@@ -598,12 +617,31 @@ AesCtx::AesCtx(const AesKey& key) :
         pop ecx
     }
 }
+#endif
 
 #endif //WIN32
 
 const AesCtx& AesCtx::operator () (AesText& t) const
 {
 #ifdef WIN32
+#ifdef _WIN64
+
+    t.AddRound(r0); // Initial round.
+
+    // 9 main rounds
+    for (uint32_t i = 0; i++ < 9;) {
+        t.SubBytes();
+        t.ShiftRows();
+        t.MixColumns();
+        t.AddRound(rnd[i]);
+    }
+
+    // Final round. No MixColumns.
+    t.SubBytes();
+    t.ShiftRows();
+    t.AddRound(rf);
+
+#else
     _asm {
         push ebx
         mov ebx, t
@@ -634,6 +672,8 @@ const AesCtx& AesCtx::operator () (AesText& t) const
         emms
         pop ebx
     }
+
+#endif
 
 #else //WIN32
 

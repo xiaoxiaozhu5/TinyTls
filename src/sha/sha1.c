@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright © 2014-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
+* Copyright ?2014-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
 *
 * This file is a part of the software package TinyTls, originally known as TinySsl.
 * This software is written by Anthony Mai and is provided under the terms and

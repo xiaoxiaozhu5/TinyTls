@@ -77,9 +77,24 @@
 #include <pthread.h>
 #include <sys/select.h>
 #include <errno.h>
-#endif //__linux__
+
+#include "TcpSockLinux.h"
+#elif defined(WIN32)
+#include <winsock2.h>
+
+#include "TcpSockWin32.h"
+
+#define close closesocket
+
+void usleep( unsigned long usec )
+{
+    Sleep( ( usec + 999 ) / 1000 );
+}
+
+#endif
 
 #include "net_test.h"
+
 
 
 #include "TlsFactory.h"
@@ -90,8 +105,6 @@
 #include "certSamples.h"
 
 #include "ecc_x25519.h"
-
-#include "TcpSockLinux.h"
 
 #define SOCKET_ERROR (-1)
 
@@ -280,7 +293,11 @@ static unsigned int ServerCallback(void* pUserContext, TlsCBData* pCBData)
     return ret;
 }
 
+#ifdef __linux__
 void* NetClientThread(void* pParam)
+#else
+DWORD WINAPI NetClientThread(LPVOID pParam)
+#endif
 {
 #define SERVER_NAME "www.cloudflare.com"
     static const char httpRequestMsg[] =
@@ -301,7 +318,11 @@ void* NetClientThread(void* pParam)
 
     printf("IP of %s is %08X\n", appCtx.server_name_, ip);
 
+#ifdef __linux
     TcpSockLinux cSock(ip, 443);
+#else
+    TcpSockWin32 cSock(ip, 443);
+#endif
 
     while (!cSock.Connected()) {
         usleep(5000);
@@ -376,14 +397,27 @@ void* NetClientThread(void* pParam)
 
     printf("NetClientThread done\n");
     *((uint*)pParam) = 1;
+#ifdef __linux
     return nullptr;
+#else
+    return 0;
+#endif
 }
 
+#ifdef __linux__
 void* NetServerThread(void* pParam)
+#else
+DWORD WINAPI NetServerThread(LPVOID pParam)
+#endif
 {
     static const int LISTEN_PORT = 443;
+#ifdef __linux
     HSock sock = TcpSockLinux::CreateListenSock(LISTEN_PORT);
     TcpSockLinux tcpListen(sock);
+#else
+    HSock sock = TcpSockWin32::CreateListenSock(LISTEN_PORT);
+    TcpSockWin32 tcpListen(sock);
+#endif
     int     nRecv = 0;
     CIPHERSET cipherSet;
 
@@ -400,7 +434,11 @@ void* NetServerThread(void* pParam)
             usleep(5000);
         }
 
+#ifdef __linux
         TcpSockLinux tcpSock;
+#else
+        TcpSockWin32 tcpSock;
+#endif
 
         tcpSock.Accept((const TcpSock&)tcpListen);
 
@@ -439,19 +477,32 @@ void* NetServerThread(void* pParam)
 
     printf("NetServerThread done\n");
     *((uint*)pParam) = 1;
+#ifdef __linux__
     return nullptr;
+#else
+    return 0;
+#endif
 }
 
 int do_clientTest()
 {
     int r = 0;
+    uint nThreadDone = 0;
 
+#ifdef __linux
     // Start a client thread
     pthread_t threadId = 0;
-    uint nThreadDone = 0;
     if (pthread_create(&threadId, nullptr, NetClientThread, &nThreadDone)) {
         printf("Failed to create client pthread\n"); return -1;
     }
+#else
+    DWORD dwThreadId = 0;
+    HANDLE hThread = CreateThread(nullptr, 0, NetClientThread, &nThreadDone, 0, &dwThreadId);
+    if(hThread == NULL)
+    {
+        printf("Failed to create client pthread\n"); return -1;
+    }
+#endif
     while (!nThreadDone)
     {
         usleep(5000);
@@ -466,12 +517,21 @@ int do_serverTest()
     r |= do_clientTest();
     //r |= do_connectTest();
 
-    // Start a server thread
-    pthread_t threadId = 0;
     uint nThreadDone = 0;
+    // Start a server thread
+#ifdef __linux
+    pthread_t threadId = 0;
     if (pthread_create(&threadId, nullptr, NetServerThread, &nThreadDone)) {
         printf("Failed to create pthread\n"); return -1;
     }
+#else
+    DWORD dwThreadId = 0;
+    HANDLE hThread = CreateThread(nullptr, 0, NetServerThread, &nThreadDone, 0, &dwThreadId);
+    if(hThread == NULL)
+    {
+        printf("Failed to create server pthread\n"); return -1;
+    }
+#endif
     while (!nThreadDone)
     {
         usleep(5000);
@@ -483,12 +543,20 @@ int do_serverTest()
 int do_socketTest()
 {
     printf("Do basic socket test\n");
+#ifdef __linux
     HSock sock = TcpSockLinux::CreateListenSock(443);
+#else
+    HSock sock = TcpSockWin32::CreateListenSock(443);
+#endif
 
     if (sock) printf("Listen socket created successfully\n");
     else printf("Listen socket created UNSUCCESSFULLY\n");
 
+#ifdef __linux
     TcpSockLinux tcpListen(sock);
+#else
+    TcpSockWin32 tcpListen(sock);
+#endif
 
     printf("Now listening\n");
 
@@ -505,7 +573,11 @@ int do_socketTest()
 
         printf("Incming connection detected\n");
 
+#ifdef __linux
         TcpSockLinux tcpSock;
+#else
+        TcpSockWin32 tcpSock;
+#endif
 
         tcpSock.Accept((const TcpSock&)tcpListen);
 
@@ -543,7 +615,11 @@ int do_connectTest()
     uint ip = getIp("www.cnn.com");
     printf("IP is %08X\n", ip);
 
+#ifdef __linux
     TcpSockLinux mySock(ip, 443);
+#else
+    TcpSockWin32 mySock(ip, 443);
+#endif
 
     printf("Successfully connected\n");
     return 0;

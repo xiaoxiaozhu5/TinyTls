@@ -11,6 +11,7 @@ public:
     TcpSockWin32();
     TcpSockWin32(uint32_t ip, uint32_t port);
     TcpSockWin32(HSock sock, sockaddr& addr, int addrLen);
+    TcpSockWin32(void* sock);
 
     virtual ~TcpSockWin32();
 

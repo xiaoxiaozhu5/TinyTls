@@ -74,7 +74,12 @@
 
 #ifdef __linux__
 #include <arpa/inet.h>
-#endif //__linux__
+#elif defined(WIN32)
+#include <winsock2.h>
+
+#pragma comment(lib, "ws2_32.lib")
+#endif
+
 
 #include "ecc.h"
 #include "aes_test.h"

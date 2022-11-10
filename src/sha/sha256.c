@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright © 2014-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
+* Copyright ?2014-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
 *
 * This file is a part of the software package TinyTls, originally known as TinySsl.
 * This software is written by Anthony Mai and is provided under the terms and
@@ -376,8 +376,8 @@ typedef struct SHA256TEST
 static SHA256TEST gSHA256Tests[] = {
     {"",    "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"},
     {"abc", "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"},
-    {"Þ\030‰A£7]:Š\006\036gWn’m", //DE188941A3375D3A8A061E67576E926D
-            "067C531269735CA7F541FDACA8F0DC76305D3CADA140F89372A410FE5EFF6E4D"},
+    //{"è½¡030å ¿?]:å¥¬006\036gWnæŠ¦", //DE188941A3375D3A8A061E67576E926D
+    //        "067C531269735CA7F541FDACA8F0DC76305D3CADA140F89372A410FE5EFF6E4D"},
     {"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
             "248D6A61D20638B8E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1"},
     {0, ""}

@@ -77,6 +77,7 @@ include_directories(
     include/cha
     include/ssl
     test
+    src
     )
  
 #Can manually add the sources using the set command as follows:
@@ -148,6 +149,7 @@ set(CERT_SRC
 set(UTIL_SRC
     src/net/TcpSock.cpp
     src/net/TcpSockLinux.cpp
+    src/net/TcpSockWin32.cpp
     src/net/dns.cpp
     src/endian.c
     src/cipher.c
@@ -188,30 +190,36 @@ else("${TARGET_CPU}" STREQUAL "x86_64")
 add_library(cryptc STATIC ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os})
 endif("${TARGET_CPU}" STREQUAL "x86_64")
 
-if("${TARGET_CPU}" STREQUAL "x86_64")
-set_target_properties(crypts32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32 -lpthread")
-set_target_properties(crypts64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64 -lpthread")
-set_target_properties(cryptc32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32 -lpthread")
-set_target_properties(cryptc64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64 -lpthread")
-endif("${TARGET_CPU}" STREQUAL "x86_64")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  set_target_properties(crypts32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32 -lpthread")
+  set_target_properties(crypts64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64 -lpthread")
+  set_target_properties(cryptc32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32 -lpthread")
+  set_target_properties(cryptc64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64 -lpthread")
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+endif()
 
-#For the shared library:
-if("${TARGET_CPU}" STREQUAL "x86_64")
-set ( CRYPTS32_LIB crypts32.so )
-set ( CRYPTS64_LIB crypts64.so )
-else("${TARGET_CPU}" STREQUAL "x86_64")
-set ( CRYPTS_LIB crypts.so )
-endif("${TARGET_CPU}" STREQUAL "x86_64")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-link_directories( ./build )
- 
-#For the static library:
-if("${TARGET_CPU}" STREQUAL "x86_64")
-set ( CRYPTC32_LIB cryptc32.a )
-set ( CRYPTC64_LIB cryptc64.a )
-else("${TARGET_CPU}" STREQUAL "x86_64")
-set ( CRYPTC_LIB cryptc.a )
-endif("${TARGET_CPU}" STREQUAL "x86_64")
+  #For the shared library:
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTS32_LIB crypts32.so )
+  set ( CRYPTS64_LIB crypts64.so )
+  else("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTS_LIB crypts.so )
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+
+  link_directories( ./build )
+  
+  #For the static library:
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTC32_LIB cryptc32.a )
+  set ( CRYPTC64_LIB cryptc64.a )
+  else("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTC_LIB cryptc.a )
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+
+endif()
 
 link_directories( ./build )
 
@@ -225,20 +233,23 @@ add_executable(ctest ${TEST_SRC} ${PLATFORM_SRC})
 add_executable(stest ${TEST_SRC} ${PLATFORM_SRC})
 endif("${TARGET_CPU}" STREQUAL "x86_64")
 
-if("${TARGET_CPU}" STREQUAL "x86_64")
-set_target_properties(ctest32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
-set_target_properties(ctest64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64")
-set_target_properties(stest32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
-set_target_properties(stest64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64")
-endif("${TARGET_CPU}" STREQUAL "x86_64")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  set_target_properties(ctest32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+  set_target_properties(ctest64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64")
+  set_target_properties(stest32 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+  set_target_properties(stest64 PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64")
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
 
-if("${TARGET_CPU}" STREQUAL "x86_64")
-target_link_libraries(ctest32 ${CRYPTC32_LIB} -lpthread)
-target_link_libraries(ctest64 ${CRYPTC64_LIB} -lpthread)
-target_link_libraries(stest32 ${CRYPTS32_LIB} -lpthread)
-target_link_libraries(stest64 ${CRYPTS64_LIB} -lpthread)
-else("${TARGET_CPU}" STREQUAL "x86_64")
-target_link_libraries(ctest ${CRYPTC_LIB} -lpthread)
-target_link_libraries(stest ${CRYPTS_LIB} -lpthread)
-endif("${TARGET_CPU}" STREQUAL "x86_64")
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  target_link_libraries(ctest32 ${CRYPTC32_LIB} -lpthread)
+  target_link_libraries(ctest64 ${CRYPTC64_LIB} -lpthread)
+  target_link_libraries(stest32 ${CRYPTS32_LIB} -lpthread)
+  target_link_libraries(stest64 ${CRYPTS64_LIB} -lpthread)
+  else("${TARGET_CPU}" STREQUAL "x86_64")
+  target_link_libraries(ctest ${CRYPTC_LIB} -lpthread)
+  target_link_libraries(stest ${CRYPTS_LIB} -lpthread)
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+
+endif()
 
