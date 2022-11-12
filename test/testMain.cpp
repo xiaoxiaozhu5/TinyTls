@@ -111,6 +111,11 @@ int dnsTest()
 
 int main(int argc, char* argv[])
 {
+#ifdef _WIN32
+    WSADATA wsa = {0};
+    WSAStartup(MAKEWORD(2,2), &wsa);
+#endif
+
     int ret = 0;
     const CIPHERSET* pCipherSet = InitCiphers(&gCipherSet);
 
@@ -135,6 +140,10 @@ int main(int argc, char* argv[])
     printf("All test %s\n", (ret==0)? "OK" : "Not OK");
 
     CleanupCerts(NULL);
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     return 0;
 }

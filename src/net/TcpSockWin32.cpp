@@ -78,6 +78,8 @@
 
 #include "TcpSockWin32.h"
 
+#pragma comment(lib, "ws2_32.lib")
+
 int TcpSockWin32::m_LastError = 0;
 
 static const u_long Non_Blocking = 1;
@@ -151,8 +153,9 @@ TcpSockWin32::TcpSockWin32(uint32_t ip, uint32_t port)
 
     // Set socket to non-blocking: 0 blocking; 1: non-blocking
     u_long iBlockingMode = Non_Blocking;
-    if (ioctlsocket((SOCKET)m_hSock, FIONBIO, &iBlockingMode)) {
-        assert(0);
+    if (ioctlsocket((SOCKET)m_hSock, FIONBIO, &iBlockingMode) == SOCKET_ERROR) {
+        ret = WSAGetLastError();
+        printf("non blocking error %d\n", ret);
     }
 
     ret = connect((SOCKET)m_hSock, (const sockaddr*)&saddr, len);

@@ -1,6 +1,9 @@
 # http://derekmolloy.ie/hello-world-introductions-to-cmake/
 cmake_minimum_required(VERSION 3.5)
 project(TinyTls C CXX ASM)
+if(MSVC)
+enable_language(ASM_MASM)
+endif()
 set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
@@ -89,19 +92,19 @@ include_directories(
 
 set(PROJECT_SRC_DIR "src")
 
-if("${TARGET_CPU}" STREQUAL "x86_64")
-set(PLATFORM32_SRC
-    src/${TARGET_PLATFORM32}/platform.s
-    )
 
-set(PLATFORM64_SRC
-    src/${TARGET_PLATFORM64}/platform.s
-    )
+if("${TARGET_CPU}" STREQUAL "x86_64")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(PLATFORM32_SRC src/${TARGET_PLATFORM32}/platform.s)
+        set(PLATFORM64_SRC src/${TARGET_PLATFORM64}/platform.s)
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        set(PLATFORM32_SRC src/win32/platform.asm)
+        set(PLATFORM64_SRC src/win64/platform.asm)
+    endif()
 else("${TARGET_CPU}" STREQUAL "x86_64")
-set(PLATFORM_SRC
-    src/${TARGET_PLATFORM}/platform.s
-    )
+    set(PLATFORM_SRC src/${TARGET_PLATFORM}/platform.s)
 endif("${TARGET_CPU}" STREQUAL "x86_64")
+
 
 set(ECC_SRC
     src/ecc/ecc.cpp
@@ -176,10 +179,10 @@ set(TEST_SRC
 
 #Generate the shared library from the sources
 if("${TARGET_CPU}" STREQUAL "x86_64")
-add_library(crypts32 SHARED ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os})
-add_library(crypts64 SHARED ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os})
+add_library(crypts32 SHARED ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os} ${PLATFORM32_SRC})
+add_library(crypts64 SHARED ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os} ${PLATFORM64_SRC})
 else("${TARGET_CPU}" STREQUAL "x86_64")
-add_library(crypts SHARED ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os})
+add_library(crypts SHARED ${ECC_SRC} ${AES_SRC} ${CC20_SRC} ${SHA_SRC} ${RSA_SRC} ${SSL_SRC} ${CERT_SRC} ${UTIL_SRC} ${os} ${PLATFORM_SRC})
 endif("${TARGET_CPU}" STREQUAL "x86_64")
 
 #Generate the static library from the sources
@@ -221,7 +224,27 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 endif()
 
-link_directories( ./build )
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+
+  #For the shared library:
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTS32_LIB crypts32.dll )
+  set ( CRYPTS64_LIB crypts64.dll )
+  else("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTS_LIB crypts.dll )
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+
+  link_directories( ./build )
+  
+  #For the static library:
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTC32_LIB cryptc32.lib )
+  set ( CRYPTC64_LIB cryptc64.lib )
+  else("${TARGET_CPU}" STREQUAL "x86_64")
+  set ( CRYPTC_LIB cryptc.lib )
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+
+endif()
 
 if("${TARGET_CPU}" STREQUAL "x86_64")
 add_executable(ctest32 ${TEST_SRC} ${PLATFORM32_SRC})
@@ -253,3 +276,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  if("${TARGET_CPU}" STREQUAL "x86_64")
+  target_link_libraries(ctest32 ${CRYPTC32_LIB})
+  target_link_libraries(ctest64 ${CRYPTC64_LIB})
+  target_link_libraries(stest32 ${CRYPTS32_LIB})
+  target_link_libraries(stest64 ${CRYPTS64_LIB})
+  else("${TARGET_CPU}" STREQUAL "x86_64")
+  target_link_libraries(ctest ${CRYPTC_LIB})
+  target_link_libraries(stest ${CRYPTS_LIB})
+  endif("${TARGET_CPU}" STREQUAL "x86_64")
+endif()
