@@ -316,7 +316,9 @@ DWORD WINAPI NetClientThread(LPVOID pParam)
 
     ip = getIp(appCtx.server_name_);
 
-    printf("IP of %s is %08X\n", appCtx.server_name_, ip);
+    struct sockaddr_in sock_in = {0};
+    sock_in.sin_addr.s_addr = ip;
+    printf("IP of %s is %s\n", appCtx.server_name_, inet_ntoa(sock_in.sin_addr));
 
 #ifdef __linux
     TcpSockLinux cSock(ip, 443);

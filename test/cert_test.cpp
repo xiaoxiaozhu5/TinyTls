@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* Copyright © 2014-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
+* Copyright ?2014-2019 Anthony Mai Mai_Anthony@hotmail.com. All Rights Reserved.
 *
 * This software is written by Anthony Mai who retains full copyright of this
 * work. As such any Copyright Notices contained in this code. are NOT to be

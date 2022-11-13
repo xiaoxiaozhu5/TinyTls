@@ -91,6 +91,38 @@
 #include "cipher.h"
 #include "cert.h"
 
+#define MAX_NUM_TESTS   50
+
+#define TEST_BEGIN()                        \
+    int total_tests = 0;                    \
+	int num_failed_tests = 0;               \
+    char *failed_tests_name[MAX_NUM_TESTS] = {0};     
+
+#define TEST_RUN(x)                         \
+	do {                                    \
+		total_tests++;	                    \
+		ret = (x);                          \
+    	if(ret != 0)                        \
+		{                                   \
+			printf("%s failed:%d\n", #x);   \
+			failed_tests_name[num_failed_tests++] = #x;  \
+		}                                   \
+    }while(0)
+
+#define TEST_RESULT()                       \
+	printf("total run %d tests, failed:%d tests"  \
+    , total_tests, num_failed_tests);       \
+    if(num_failed_tests > 0)                \
+    {                                       \
+		printf(":\n");               \
+		for(int i = 0; i < num_failed_tests; ++i)   \
+		{                                   \
+			printf("\t%s\n", failed_tests_name[i]); \
+		}                                   \
+    } else { printf("\n"); }
+
+	
+
 extern uint32_t getIp(const char* hostname);
 
 const CIPHERSET* gpCipherSet = nullptr;
@@ -116,6 +148,8 @@ int main(int argc, char* argv[])
     WSAStartup(MAKEWORD(2,2), &wsa);
 #endif
 
+    TEST_BEGIN();
+
     int ret = 0;
     const CIPHERSET* pCipherSet = InitCiphers(&gCipherSet);
 
@@ -125,19 +159,15 @@ int main(int argc, char* argv[])
 
     StartCerts(malloc, free, pCipherSet);
 
-    ret |= do_CertGenTest(*pCipherSet);
+    //TEST_RUN(do_CertGenTest(*pCipherSet));
+    //TEST_RUN(ecc_Test());
+    //TEST_RUN(DoRSATest());
+    //TEST_RUN(aes_test());
+    //TEST_RUN(rfc8448_test(*pCipherSet));
+    TEST_RUN(do_clientTest());
+    //TEST_RUN(do_serverTest());
 
-    //ret |= ecc_Test();
-    //ret |= DoRSATest();
-
-    ret |= aes_test();
-
-    ret |= rfc8448_test(*pCipherSet);
-
-    ret |= do_clientTest();
-    ret |= do_serverTest();
-
-    printf("All test %s\n", (ret==0)? "OK" : "Not OK");
+    TEST_RESULT();
 
     CleanupCerts(NULL);
 
