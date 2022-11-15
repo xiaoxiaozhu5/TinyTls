@@ -74,6 +74,9 @@ or
 
 The solution is rather easy. Just install the needed gcc multi-arch packages:
   sudo apt-get install gcc-multilib g++-multilib
+note: this should be sudo apt-get install gcc-<version>-multilib g++-<version>-multilib
+in my case, my gcc and g++ are 11, so this command should be:
+  sudo apt-get install gcc-11-multilib g++-11-multilib
 
 Read related online discussions here on stackoverflow.com:
   https://stackoverflow.com/questions/54082459/fatal-error-bits-libc-header-start-h-no-such-file-or-directory-while-compili

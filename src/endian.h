@@ -1,5 +1,6 @@
 #ifndef _ENDIAN_H_INCLUDED_6_27_2014_
 #define _ENDIAN_H_INCLUDED_6_27_2014_
+#include <stdint.h>
 
 typedef uint8_t uchar;
 typedef uint32_t uint;

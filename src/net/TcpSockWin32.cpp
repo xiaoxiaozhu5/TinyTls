@@ -67,6 +67,9 @@
 *  Notes:           This file uses 4 spaces indents
 *
 ******************************************************************************/
+#include "TcpSockWin32.h"
+
+#ifdef WIN32
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -76,7 +79,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "TcpSockWin32.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -333,3 +335,4 @@ int TcpSockWin32::Recv(uint8_t* pData, size_t cbSize)
 
     return SOCKET_ERROR;
 }
+#endif

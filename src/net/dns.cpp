@@ -66,7 +66,7 @@
 *  Notes:           This file uses 4 spaces indents
 *
 ******************************************************************************/
-
+#include <stdio.h>
 #include <stdint.h>
 #include <functional>
 #if defined(_WIN32) | defined(_WIN64)

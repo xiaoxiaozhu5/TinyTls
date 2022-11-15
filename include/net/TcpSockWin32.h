@@ -2,6 +2,8 @@
 
 #include "TcpSock.h"
 
+#ifdef WIN32
+
 struct sockaddr;
 
 class TcpSockWin32 : TcpSock {
@@ -32,3 +34,4 @@ private:
 
     static int m_LastError;
 };
+#endif
