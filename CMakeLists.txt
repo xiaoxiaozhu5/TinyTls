@@ -35,6 +35,12 @@ SET(CMAKE_ASM_FLAGS "${CFLAGS} ${ASM_OPTIONS}" )
 
 set_source_files_properties(*.s PROPERTIES COMPILE_FLAGS "-x assembler-with-cpp")
 
+option(ENABLED_LOGGING "enable debug log output" OFF)
+
+if(ENABLED_LOGGING)
+add_definitions(-DENABLE_DEBUG_LOG)
+endif()
+
 # Generic compilation options
 if(MSVC)
   add_definitions(-DWIN32_LEAN_AND_MEAN)
@@ -79,6 +85,7 @@ include_directories(
     include/aes
     include/cha
     include/ssl
+    include/debug
     test
     src
     )
@@ -156,6 +163,7 @@ set(UTIL_SRC
     src/net/dns.cpp
     src/endian.c
     src/cipher.c
+    src/debug/debug_helper.cpp
     )
 
 set(SSL_SRC

@@ -87,6 +87,8 @@
 #include "aes128.h"
 #include "chacha20.h"
 
+#include "debug_helper.h"
+
 #define CONTENT_HEADER_LEN      5
 
 

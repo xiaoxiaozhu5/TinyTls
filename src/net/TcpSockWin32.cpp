@@ -289,7 +289,7 @@ int TcpSockWin32::Send(const uint8_t* pData, size_t cbSize)
             if (cbSize) Sleep(5);
             else return nSend;
         }
-        else if (ret = SOCKET_ERROR)
+        else if (ret == SOCKET_ERROR)
         {
             int err = WSAGetLastError();
             if (err == WSAEWOULDBLOCK || err == WSAENOBUFS) Sleep(5);

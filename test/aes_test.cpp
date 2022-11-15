@@ -80,7 +80,7 @@ int aes_test()
 
     printf("Do GCM test\n");
 
-    gcm_test();
+    ret = gcm_test();
 
     static const AesText oText{ 0x1d842539, 0xfb09dc02, 0x978511dc, 0x320b6a19 };
 
