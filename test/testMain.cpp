@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
 
     StartCerts(malloc, free, pCipherSet);
 
-    //TEST_RUN(do_CertGenTest(*pCipherSet));
+    TEST_RUN(do_CertGenTest(*pCipherSet));
     //TEST_RUN(ecc_Test());
     //TEST_RUN(DoRSATest());
     //TEST_RUN(aes_test());

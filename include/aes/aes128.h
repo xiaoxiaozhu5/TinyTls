@@ -16,21 +16,21 @@ union u32 {
 
 struct HKey
 {
-    u128 h[32][16];
+    u128 h[32][16] = {0};
     HKey(const AesText& key);
     HKey(const AesCtx& ctx);
     void pmult(AesText& x);
 };
 
 struct AesKey {
-    u32 data[4];
+    u32 data[4] = {0};
     AesKey& set(const uint8_t b[16]);
     AesKey& operator () (uint32_t n); // Key expansion
 };
 
 
 struct AesText {
-    u32 text[4];
+    u32 text[4] = {0};
     bool operator == (const AesText& s);
     AesText& set(const uint8_t b[16]);
     void out(uint8_t b[16]);
@@ -49,7 +49,7 @@ struct AesCtr : AesText {
 };
 
 union AesCtx {
-    AesKey rnd[11];
+    AesKey rnd[11] = {0};
     struct {
         AesKey r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, rf;
     };

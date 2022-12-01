@@ -159,6 +159,8 @@ HKey::HKey(const AesText& key) {
         for (i = 1; i < j; i++) {
             (p[br[j + i]] = p[br[j]]) ^= p[br[i]];
         }
+        //BUG: j = 8, br[16] = 0x8d(linux) 0(windows)
+        //WORKAROUND: br[17] = {..., 0x8d} this test ok
         (p[br[j + j]] = p[br[j]]).shiftR();
     }
     for ( ; j < 512; j++) {
@@ -796,11 +798,11 @@ int Aes128Gcm::Decrypt(
 
     aes_(icb); // This block will be used to encrypt final authentication tag.
 
-    AesText tag{ 0, 0, 0, 0 };
+    AesText tag = {};
 
     if (aadText)
         for (i = 0; i < cbAad; i += sizeof(AesText)) {
-            AesText txt;
+            AesText txt = {};
             uint8_t* p = txt.text[0].b;
             k = (cbAad - i);
             if (k > sizeof(AesText)) k = sizeof(AesText);
@@ -815,7 +817,7 @@ int Aes128Gcm::Decrypt(
 
     if (pText)
         for (i = 0; i < cbLen; i += sizeof(AesText)) {
-            AesText txt;
+            AesText txt = {};
             uint8_t* p = txt.text[0].b;
             k = (cbLen - i);
             if (k > sizeof(AesText)) k = sizeof(AesText);
