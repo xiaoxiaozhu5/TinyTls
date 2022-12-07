@@ -67,8 +67,9 @@
 #include <stdint.h>
 #include <new>
 
-#include "aes128.h"
 #include "aes_test.h"
+#ifndef WIN32
+#include "aes128.h"
 
 #include <stdio.h>
 
@@ -428,4 +429,9 @@ int gcm_test()
     ret |= gcm_test1();
     return ret;
 }
-
+#else
+int aes_test()
+{
+	return 0;
+}
+#endif

@@ -798,11 +798,11 @@ int Aes128Gcm::Decrypt(
 
     aes_(icb); // This block will be used to encrypt final authentication tag.
 
-    AesText tag = {};
+    AesText tag{ 0, 0, 0, 0 };
 
     if (aadText)
         for (i = 0; i < cbAad; i += sizeof(AesText)) {
-            AesText txt = {};
+            AesText txt;
             uint8_t* p = txt.text[0].b;
             k = (cbAad - i);
             if (k > sizeof(AesText)) k = sizeof(AesText);
@@ -817,7 +817,7 @@ int Aes128Gcm::Decrypt(
 
     if (pText)
         for (i = 0; i < cbLen; i += sizeof(AesText)) {
-            AesText txt = {};
+            AesText txt;
             uint8_t* p = txt.text[0].b;
             k = (cbLen - i);
             if (k > sizeof(AesText)) k = sizeof(AesText);

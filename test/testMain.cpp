@@ -78,6 +78,8 @@
 #include <winsock2.h>
 
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "Bcrypt.lib")
+#pragma comment(lib, "Crypt32.lib")
 #endif
 
 
@@ -104,7 +106,7 @@
 		ret = (x);                          \
     	if(ret != 0)                        \
 		{                                   \
-			printf("%s failed:%d\n", #x);   \
+			printf("%s failed:%d\n", #x, ret);   \
 			failed_tests_name[num_failed_tests++] = #x;  \
 		}                                   \
     }while(0)

@@ -84,8 +84,12 @@
 
 #include "hkdf.h"
 #include "ssa.h"
-#include "aes128.h"
 #include "chacha20.h"
+#ifndef WIN32
+#include "aes128.h"
+#else
+#include "win-crypt.h"
+#endif
 
 #include "debug_helper.h"
 
@@ -1834,14 +1838,64 @@ uint TinyTls::EncryptWithMAC(
     case TLS_AES_128_GCM_SHA256:            //0x13,0x01		Y[RFC8446]
     {
         nc ^= (const uint32_t*)pAAD;
-        Aes128Gcm aes(pKey, nc);
 
         uchar* pRealAAD = pMsg - 5; uchar expIV[8];
         pMsg[nMsgSize] = cContentType; // Append one byte content type
         pRealAAD[0] = CONTENT_APPLICATION_DATA;
         pRealAAD[3] = uchar((nMsgSize+16+1)>>8); pRealAAD[4] = uchar(nMsgSize+16+1);
+#ifndef WIN32
+        Aes128Gcm aes(pKey, nc);
         aes.Encrypt(pMsg, nMsgSize+1, expIV, pMsg + nMsgSize+1, pRealAAD, 5);
-
+#else
+        {
+			void* ctbuf = NULL;
+			void* ctbuf2 = NULL;
+			size_t ctlen = 0;
+			size_t ctlen2 = 0;
+			void* tag = NULL;
+			size_t taglen = 0;
+        	const struct ubiq_platform_algorithm* alg = nullptr;
+			do {
+				int rc = ubiq_platform_algorithm_get_byid(1, &alg);
+				if (rc != 0)
+				{
+					debug_log("get algorithm failed:%d", rc);
+					break;
+				}
+				struct ubiq_support_cipher_context* ctx = nullptr;
+				rc = ubiq_support_encryption_init(alg, pKey, 16, nc, 12, pRealAAD, 5, &ctx);
+				if (rc != 0)
+				{
+					debug_log("encryption init failed:%d", rc);
+					break;
+				}
+				rc = ubiq_support_encryption_update(ctx, pMsg, nMsgSize + 1, &ctbuf, &ctlen);
+				if (rc != 0)
+				{
+					debug_log("encryption update failed:%d", rc);
+					break;
+				}
+				rc = ubiq_support_encryption_finalize(ctx, &ctbuf2, &ctlen2, &tag, &taglen);
+				if (rc != 0)
+				{
+					debug_log("encryption finalize failed:%d", rc);
+					break;
+				}
+                if(ctlen > 0 && ctbuf)
+                {
+	                memcpy(pMsg, ctbuf, ctlen);
+                }
+                if(ctlen2 > 0 && ctbuf2)
+                {
+					memcpy(pMsg + ctlen, ctbuf2, ctlen2);
+                }
+				memcpy(pMsg + nMsgSize + 1, tag, taglen);
+			} while (false);
+            free(ctbuf);
+            free(ctbuf2);
+            free(tag);
+        }
+#endif
         nMacSize = 1 + 16;
     }
     break;
@@ -1850,13 +1904,63 @@ uint TinyTls::EncryptWithMAC(
     case TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: // 0xC0,0x2F		Y[RFC5289]
     case TLS_RSA_WITH_AES_128_GCM_SHA256:       // 0x00, 0x9C		Y[RFC5288]
     {
-        Aes128Gcm aes(pKey, pIV);
-
         memmove(pMsg + 8, pMsg, nMsgSize);
         memcpy(pMsg, pIV + 4, 8);
         pAAD[8] = cContentType; pAAD[11] = nMsgSize >> 8; pAAD[12] = nMsgSize;
+#ifndef WIN32
+        Aes128Gcm aes(pKey, pIV);
         aes.Encrypt(pMsg+8, nMsgSize, pMsg, pMsg+nMsgSize+8, pAAD, 13);
-
+#else
+	    {
+			void* ctbuf = NULL;
+			void* ctbuf2 = NULL;
+			size_t ctlen = 0;
+			size_t ctlen2 = 0;
+			void* tag = NULL;
+			size_t taglen = 0;
+			const struct ubiq_platform_algorithm* alg = nullptr;
+			do {
+				int rc = ubiq_platform_algorithm_get_byid(1, &alg);
+				if (rc != 0)
+				{
+					debug_log("get algorithm failed:%d", rc);
+					break;
+				}
+				struct ubiq_support_cipher_context* ctx = nullptr;
+				rc = ubiq_support_encryption_init(alg, pKey, 16, pIV, 12, pAAD, 13, &ctx);
+				if (rc != 0)
+				{
+					debug_log("encryption init failed:%d", rc);
+					break;
+				}
+				rc = ubiq_support_encryption_update(ctx, pMsg+8, nMsgSize, &ctbuf, &ctlen);
+				if (rc != 0)
+				{
+					debug_log("encryption update failed:%d", rc);
+					break;
+				}
+				rc = ubiq_support_encryption_finalize(ctx, &ctbuf2, &ctlen2, &tag, &taglen);
+				if (rc != 0)
+				{
+					debug_log("encryption finalize failed:%d", rc);
+					break;
+				}
+                if(ctlen > 0 && ctbuf)
+                {
+					memcpy(pMsg + 8, ctbuf, ctlen);
+                }
+                if(ctlen2 > 0 && ctbuf2)
+                {
+					memcpy(pMsg + 8 + ctlen, ctbuf2, ctlen2);
+                }
+				memcpy(pMsg + nMsgSize + 8, tag, taglen);
+                memcpy(pMsg, pIV + 4, 8);
+			} while (false);
+			free(ctbuf);
+			free(ctbuf2);
+			free(tag);
+        }
+#endif
         for (int i = 12; i-->4; ) if (++pIV[i]) break;  // Increment explicit IV
         nMacSize = 8 + 16;
     }
@@ -2091,6 +2195,7 @@ uint TinyTls::ParseNetMsg
 
             ChachaNounce nc(*(const ChachaNounce*)pIV);
 
+			debug_log("cipher:0x%#X\n", eServerCipher);
             switch (m_bIsClient ? eServerCipher : eClientCipher)
             {
             case TLS_RSA_EXPORT_WITH_RC4_40_MD5:
@@ -2108,12 +2213,68 @@ uint TinyTls::ParseNetMsg
                 }
                 nMsgSize = nContentSize - 16;
                 nc ^= (const uint32_t*)pAAD;
+#ifndef WIN32
                 Aes128Gcm cipher(pKey, nc);
                 // Payload is nContextSize + 1 byte appended content type + 16 bytes security tag.
                 if (cipher.Decrypt(pMsg, nMsgSize, pMsg + nMsgSize, pRealAAD, 5)) {
                     //Corrupted message. Bail out.
                     eState = SSLSTATE_ABORT;
                 }
+#else
+                {
+					int rc = 0;
+					const struct ubiq_platform_algorithm* alg = nullptr;
+					struct ubiq_support_cipher_context* ctx = nullptr;
+
+					void* dpt = NULL;
+					size_t ptlen = 0;
+					void* dpt2 = NULL;
+					size_t ptlen2 = 0;
+
+					do
+					{
+						rc = ubiq_platform_algorithm_get_byid(1, &alg);
+						if (rc != 0)
+						{
+							debug_log("decryption get algorithm failed:%d", rc);
+							break;
+						}
+						rc = ubiq_support_decryption_init(alg, pKey, 16, nc, 12, pRealAAD, 5, &ctx);
+						if (rc != 0)
+						{
+							debug_log("decryption init failed:%d", rc);
+							break;
+						}
+						rc = ubiq_support_decryption_update(ctx, pMsg, nMsgSize, &dpt, &ptlen);
+						if (rc != 0)
+						{
+							debug_log("decryption update failed:%d", rc);
+							break;
+						}
+						rc = ubiq_support_decryption_finalize(ctx, pMsg + nMsgSize, 16, &dpt2, &ptlen2);
+						if (rc != 0)
+						{
+							debug_log("decryption finalize failed:%d", rc);
+							break;
+						}
+                        if(ptlen > 0 && dpt)
+                        {
+	                        memcpy(pMsg, dpt, ptlen);
+                        }
+                        if(ptlen2 > 0 && dpt2)
+                        {
+							memcpy(pMsg + ptlen, dpt2, ptlen2); 
+                        }
+					} while (false);
+					if (rc != 0)
+					{
+						eState = SSLSTATE_ABORT;
+					}
+                    free(dpt);
+                    free(dpt2);
+                }
+#endif
+
                 nMsgSize--; // The extra byte encoded is real content type as last byte.
                 cContentType = pMsg[nMsgSize];
             }
@@ -2128,13 +2289,68 @@ uint TinyTls::ParseNetMsg
                     eState = SSLSTATE_ABORT; break;
                 }
                 memcpy(pIV + 4, pMsg, 8); nMsgSize = nContentSize - 24;
-                Aes128Gcm cipher(pKey, pIV);
                 pAAD[8] = cContentType;  pAAD[11] = (nContentSize - 24) >> 8; pAAD[12] = (nContentSize - 24);
+#ifndef WIN32
+                Aes128Gcm cipher(pKey, pIV);
                 // Payload is nContextSize = 8 bytes explicit IV + encrypted data + 16 bytes security tag.
                 if (cipher.Decrypt(pMsg + 8, nMsgSize, pMsg + nMsgSize + 8, pAAD, 13)) {
                     //Corrupted message. Bail out.
                     eState = SSLSTATE_ABORT;
                 }
+#else
+                {
+					int rc = 0;
+					const struct ubiq_platform_algorithm* alg = nullptr;
+					struct ubiq_support_cipher_context* ctx = nullptr;
+
+					void* dpt = NULL;
+					size_t ptlen = 0;
+					void* dpt2 = NULL;
+					size_t ptlen2 = 0;
+
+					do
+					{
+						rc = ubiq_platform_algorithm_get_byid(1, &alg);
+						if (rc != 0)
+						{
+							debug_log("decryption get algorithm failed:%d", rc);
+							break;
+						}
+						rc = ubiq_support_decryption_init(alg, pKey, 16, pIV, 12, pAAD, 13, &ctx);
+						if (rc != 0)
+						{
+							debug_log("decryption init failed:%d", rc);
+							break;
+						}
+						rc = ubiq_support_decryption_update(ctx, pMsg + 8, nMsgSize, &dpt, &ptlen);
+						if (rc != 0)
+						{
+							debug_log("decryption update failed:%d", rc);
+							break;
+						}
+						rc = ubiq_support_decryption_finalize(ctx, pMsg + nMsgSize + 8, 16, &dpt2, &ptlen2);
+						if (rc != 0)
+						{
+							debug_log("decryption finalize failed:%d", rc);
+							break;
+						}
+                        if(ptlen > 0 && dpt)
+                        {
+							memcpy(pMsg + 8, dpt, ptlen); 
+                        }
+                        if(ptlen2 > 0 && dpt2)
+                        {
+							memcpy(pMsg + 8 + ptlen, dpt2, ptlen2); 
+                        }
+					} while (false);
+					if (rc != 0)
+					{
+						eState = SSLSTATE_ABORT;
+					}
+                    free(dpt);
+                    free(dpt2);
+                }
+#endif
                 memmove(pMsg, pMsg + 8, nMsgSize);
 
                 for (int i = 12; i-->4; ) if (++pIV[i]) break;  // Increment explicit IV

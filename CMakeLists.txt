@@ -126,9 +126,15 @@ set(ECC_SRC
     src/ecc/ecc_x25519.cpp
     )
 
+if(WIN32)
+set(AES_SRC
+    src/aes/win-crypt.c
+    )
+else()
 set(AES_SRC
     src/aes/aes128.cpp
     )
+endif()
 
 set(CC20_SRC
     src/cha/chacha20.cpp
