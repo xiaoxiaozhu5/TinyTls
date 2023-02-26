@@ -159,9 +159,7 @@ HKey::HKey(const AesText& key) {
         for (i = 1; i < j; i++) {
             (p[br[j + i]] = p[br[j]]) ^= p[br[i]];
         }
-        //BUG: j = 8, br[16] = 0x8d(linux) 0(windows)
-        //WORKAROUND: br[17] = {..., 0x8d} this test ok
-        (p[br[j + j]] = p[br[j]]).shiftR();
+        if (j+j < 16) (p[br[j + j]] = p[br[j]]).shiftR();
     }
     for ( ; j < 512; j++) {
         for (i = 0; i < 16; i++) {
